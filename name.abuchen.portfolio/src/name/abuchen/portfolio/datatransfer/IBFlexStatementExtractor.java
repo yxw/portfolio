@@ -71,6 +71,8 @@ public class IBFlexStatementExtractor implements Extractor
         this.exchanges.put("TGATE", "DE");
         this.exchanges.put("SWB", "SG");
         this.exchanges.put("FWB", "F");
+        this.exchanges.put("SEHK", "HK");
+        this.exchanges.put("SGX", "SI");
     }
 
     public Client getClient()
