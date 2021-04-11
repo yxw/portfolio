@@ -2,8 +2,8 @@ package name.abuchen.portfolio.datatransfer.pdf.ingdiba;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -17,8 +17,12 @@ import name.abuchen.portfolio.datatransfer.Extractor.BuySellEntryItem;
 import name.abuchen.portfolio.datatransfer.Extractor.Item;
 import name.abuchen.portfolio.datatransfer.Extractor.SecurityItem;
 import name.abuchen.portfolio.datatransfer.Extractor.TransactionItem;
+import name.abuchen.portfolio.datatransfer.ImportAction.Status;
+import name.abuchen.portfolio.datatransfer.actions.AssertImportActions;
+import name.abuchen.portfolio.datatransfer.actions.CheckCurrenciesAction;
 import name.abuchen.portfolio.datatransfer.pdf.INGDiBaExtractor;
 import name.abuchen.portfolio.datatransfer.pdf.PDFInputFile;
+import name.abuchen.portfolio.model.Account;
 import name.abuchen.portfolio.model.AccountTransaction;
 import name.abuchen.portfolio.model.BuySellEntry;
 import name.abuchen.portfolio.model.Client;
@@ -288,6 +292,37 @@ public class INGDiBaPDFExtractorTest
     }
 
     @Test
+    public void testWertpapierKauf9() throws IOException
+    {
+        INGDiBaExtractor extractor = new INGDiBaExtractor(new Client());
+
+        List<Exception> errors = new ArrayList<Exception>();
+
+        List<Item> results = extractor.extract(PDFInputFile.loadTestCase(getClass(), "INGDiBa_Kauf9.txt"), errors);
+
+        assertThat(errors, empty());
+        assertThat(results.size(), is(2));
+
+        // check security
+        Security security = results.stream().filter(i -> i instanceof SecurityItem).findFirst().get().getSecurity();
+        assertThat(security.getIsin(), is("DE000TUAG000"));
+        assertThat(security.getWkn(), is("TUAG00"));
+        assertThat(security.getName(), is("TUI AG Namens-Aktien o.N."));
+
+        // check buy sell transaction
+        BuySellEntry entry = (BuySellEntry) results.stream().filter(i -> i instanceof BuySellEntryItem).findFirst()
+                        .get().getSubject();
+
+        assertThat(entry.getPortfolioTransaction().getType(), is(PortfolioTransaction.Type.BUY));
+        assertThat(entry.getAccountTransaction().getType(), is(AccountTransaction.Type.BUY));
+
+        assertThat(entry.getPortfolioTransaction().getAmount(), is(Values.Amount.factorize(297.15)));
+        assertThat(entry.getPortfolioTransaction().getDateTime(), is(LocalDateTime.parse("2021-01-26T00:00")));
+        assertThat(entry.getPortfolioTransaction().getShares(), is(Values.Share.factorize(275)));
+        assertThat(entry.getPortfolioTransaction().getUnitSum(Unit.Type.FEE), is(Money.of("EUR", 290L)));
+    }
+
+    @Test
     public void testWertpapierVerkauf1() throws IOException
     {
         INGDiBaExtractor extractor = new INGDiBaExtractor(new Client());
@@ -386,27 +421,27 @@ public class INGDiBaPDFExtractorTest
     public void testWertpapierVerkauf4() throws IOException
     {
         INGDiBaExtractor extractor = new INGDiBaExtractor(new Client());
-    
+
         List<Exception> errors = new ArrayList<Exception>();
-    
+
         List<Item> results = extractor.extract(PDFInputFile.loadTestCase(getClass(), "INGDiBa_Verkauf4.txt"), errors);
-    
+
         assertThat(errors, empty());
         assertThat(results.size(), is(2));
-    
+
         // check security
         Security security = results.stream().filter(i -> i instanceof SecurityItem).findFirst().get().getSecurity();
         assertThat(security.getIsin(), is("DE000MA03JY5"));
         assertThat(security.getWkn(), is("MA03JY"));
         assertThat(security.getName(), is("Morgan Stanley & Co. Intl PLC FaktL O.End DAX 11476,96"));
-    
+
         // check buy sell transaction
         BuySellEntry entry = (BuySellEntry) results.stream().filter(i -> i instanceof BuySellEntryItem).findFirst()
                         .get().getSubject();
-    
+
         assertThat(entry.getPortfolioTransaction().getType(), is(PortfolioTransaction.Type.SELL));
         assertThat(entry.getAccountTransaction().getType(), is(AccountTransaction.Type.SELL));
-    
+
         assertThat(entry.getPortfolioTransaction().getAmount(), is(Values.Amount.factorize(393.10)));
         assertThat(entry.getPortfolioTransaction().getDateTime(), is(LocalDateTime.parse("2020-09-24T08:14:25")));
         assertThat(entry.getPortfolioTransaction().getShares(), is(Values.Share.factorize(70)));
@@ -506,7 +541,7 @@ public class INGDiBaPDFExtractorTest
         assertThat(t.getGrossValue(), is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(116.84))));
         assertThat(t.getUnitSum(Unit.Type.TAX), is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(14.72 + 0.8))));
     }
-    
+
     @Test
     public void testErtragsgutschrift4() throws IOException
     {
@@ -554,7 +589,7 @@ public class INGDiBaPDFExtractorTest
         Security security = results.stream().filter(i -> i instanceof SecurityItem).findFirst().get().getSecurity();
         assertThat(security.getIsin(), is("US5801351017"));
         assertThat(security.getWkn(), is("856958"));
-        assertThat(security.getName(), is("McDonald's Corp."));
+        assertThat(security.getName(), is("McDonald's Corp. Registered Shares DL-,01"));
 
         AccountTransaction t = (AccountTransaction) results.stream().filter(i -> i instanceof TransactionItem)
                         .findFirst().get().getSubject();
@@ -566,7 +601,8 @@ public class INGDiBaPDFExtractorTest
         assertThat(t.getShares(), is(Values.Share.factorize(66)));
 
         assertThat(t.getGrossValue(), is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(50.24 + 8.87))));
-        assertThat(t.getUnitSum(Unit.Type.TAX), is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(5.91 + 0.32 + 8.87))));
+        assertThat(t.getUnitSum(Unit.Type.TAX),
+                        is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(5.91 + 0.32 + 8.87))));
     }
 
     @Test
@@ -630,7 +666,7 @@ public class INGDiBaPDFExtractorTest
         assertThat(t.getUnitSum(Unit.Type.TAX), is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(31.34))));
         assertThat(t.getGrossValue(), is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(89.53))));
     }
-    
+
     @Test
     public void testDividendengutschrift4() throws IOException
     {
@@ -647,7 +683,7 @@ public class INGDiBaPDFExtractorTest
         Security security = results.stream().filter(i -> i instanceof SecurityItem).findFirst().get().getSecurity();
         assertThat(security.getIsin(), is("BE0974293251"));
         assertThat(security.getWkn(), is("A2ASUV"));
-        assertThat(security.getName(), is("Anheuser-Busch InBev S.A./N.V."));
+        assertThat(security.getName(), is("Anheuser-Busch InBev S.A./N.V. Actions au Port. o.N."));
 
         AccountTransaction t = (AccountTransaction) results.stream().filter(i -> i instanceof TransactionItem)
                         .findFirst().get().getSubject();
@@ -662,7 +698,212 @@ public class INGDiBaPDFExtractorTest
         assertThat(t.getGrossValue(), is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(55.0))));
     }
 
-    
+    @Test
+    public void testDividendengutschrift5() throws IOException
+    {
+        Client client = new Client();
+
+        Security existingSecurity = new Security("McDonald’s Corp.", CurrencyUnit.USD);
+        existingSecurity.setIsin("US5801351017");
+        existingSecurity.setWkn("856958");
+        client.addSecurity(existingSecurity);
+
+        INGDiBaExtractor extractor = new INGDiBaExtractor(client);
+
+        List<Exception> errors = new ArrayList<>();
+
+        List<Item> results = extractor
+                        .extract(PDFInputFile.loadTestCase(getClass(), "INGDiBa_Dividendengutschrift5.txt"), errors);
+
+        assertThat(errors, empty());
+        assertThat(results.size(), is(1));
+
+        AccountTransaction t = (AccountTransaction) results.stream().filter(i -> i instanceof TransactionItem)
+                        .findFirst().get().getSubject();
+
+        assertThat(t.getType(), is(AccountTransaction.Type.DIVIDENDS));
+
+        assertThat(t.getAmount(), is(Values.Amount.factorize(8.94)));
+        assertThat(t.getDateTime(), is(LocalDateTime.parse("2020-12-15T00:00")));
+        assertThat(t.getShares(), is(Values.Share.factorize(10)));
+
+        assertThat(t.getUnitSum(Unit.Type.TAX), is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(1.58))));
+        assertThat(t.getGrossValue(), is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(10.52))));
+        assertThat(t.getUnit(Unit.Type.GROSS_VALUE).get().getForex(),
+                        is(Money.of(CurrencyUnit.USD, Values.Amount.factorize(12.9))));
+
+        CheckCurrenciesAction c = new CheckCurrenciesAction();
+        Account account = new Account();
+        account.setCurrencyCode(CurrencyUnit.EUR);
+        Status s = c.process(t, account);
+        assertThat(s, is(Status.OK_STATUS));
+    }
+
+    @Test
+    public void testDividendengutschrift6() throws IOException
+    {
+        INGDiBaExtractor extractor = new INGDiBaExtractor(new Client());
+
+        List<Exception> errors = new ArrayList<>();
+
+        List<Item> results = extractor.extract(
+                        PDFInputFile.loadTestCase(getClass(), "INGDiBa_Dividendengutschrift6.txt"),
+                        errors);
+
+        assertThat(errors, empty());
+        assertThat(results.size(), is(2));
+
+        Security security = results.stream().filter(i -> i instanceof SecurityItem).findFirst().get().getSecurity();
+        assertThat(security.getIsin(), is("US4581401001"));
+        assertThat(security.getWkn(), is("855681"));
+        assertThat(security.getName(), is("Intel Corp. Registered Shares DL -,001"));
+
+        AccountTransaction t = (AccountTransaction) results.stream().filter(i -> i instanceof TransactionItem)
+                        .findFirst().get().getSubject();
+
+        assertThat(t.getType(), is(AccountTransaction.Type.DIVIDENDS));
+
+        assertThat(t.getAmount(), is(Values.Amount.factorize(3.90)));
+        assertThat(t.getDateTime(), is(LocalDateTime.parse("2021-03-01T00:00")));
+        assertThat(t.getShares(), is(Values.Share.factorize(16)));
+
+        assertThat(t.getGrossValue(), is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(4.58))));
+        assertThat(t.getUnitSum(Unit.Type.TAX), is(Money.of(CurrencyUnit.EUR,
+                        Values.Amount.factorize(0.68))));
+    }
+
+    @Test
+    public void testDividendengutschrift7() throws IOException
+    {
+        INGDiBaExtractor extractor = new INGDiBaExtractor(new Client());
+
+        List<Exception> errors = new ArrayList<>();
+
+        List<Item> results = extractor.extract(
+                        PDFInputFile.loadTestCase(getClass(), "INGDiBa_Dividendengutschrift7.txt"),
+                        errors);
+
+        assertThat(errors, empty());
+        assertThat(results.size(), is(2));
+
+        Security security = results.stream().filter(i -> i instanceof SecurityItem).findFirst().get().getSecurity();
+        assertThat(security.getIsin(), is("US92826C8394"));
+        assertThat(security.getWkn(), is("A0NC7B"));
+        assertThat(security.getName(), is("VISA Inc. Reg. Shares Class A DL -,0001"));
+
+        AccountTransaction t = (AccountTransaction) results.stream().filter(i -> i instanceof TransactionItem)
+                        .findFirst().get().getSubject();
+
+        assertThat(t.getType(), is(AccountTransaction.Type.DIVIDENDS));
+
+        assertThat(t.getAmount(), is(Values.Amount.factorize(1.12)));
+        assertThat(t.getDateTime(), is(LocalDateTime.parse("2021-03-01T00:00")));
+        assertThat(t.getShares(), is(Values.Share.factorize(5)));
+
+        assertThat(t.getGrossValue(), is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(1.32))));
+        assertThat(t.getUnitSum(Unit.Type.TAX), is(Money.of(CurrencyUnit.EUR,
+                        Values.Amount.factorize(0.20))));
+    }
+
+    @Test
+    public void testDividendengutschrift8() throws IOException
+    {
+        INGDiBaExtractor extractor = new INGDiBaExtractor(new Client());
+
+        List<Exception> errors = new ArrayList<>();
+
+        List<Item> results = extractor.extract(
+                        PDFInputFile.loadTestCase(getClass(), "INGDiBa_Dividendengutschrift8.txt"),
+                        errors);
+
+        assertThat(errors, empty());
+        assertThat(results.size(), is(2));
+
+        Security security = results.stream().filter(i -> i instanceof SecurityItem).findFirst().get().getSecurity();
+        assertThat(security.getIsin(), is("US4581401001"));
+        assertThat(security.getWkn(), is("855681"));
+        assertThat(security.getName(), is("Intel Corp. Registered Shares DL -,001"));
+
+        AccountTransaction t = (AccountTransaction) results.stream().filter(i -> i instanceof TransactionItem)
+                        .findFirst().get().getSubject();
+
+        assertThat(t.getType(), is(AccountTransaction.Type.DIVIDENDS));
+
+        assertThat(t.getAmount(), is(Values.Amount.factorize(60.82)));
+        assertThat(t.getDateTime(), is(LocalDateTime.parse("2021-03-01T00:00")));
+        assertThat(t.getShares(), is(Values.Share.factorize(250)));
+
+        assertThat(t.getGrossValue(), is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(71.55))));
+        assertThat(t.getUnitSum(Unit.Type.TAX), is(Money.of(CurrencyUnit.EUR,
+                        Values.Amount.factorize(10.73))));
+    }
+
+    @Test
+    public void testDividendengutschrift9() throws IOException
+    {
+        INGDiBaExtractor extractor = new INGDiBaExtractor(new Client());
+
+        List<Exception> errors = new ArrayList<>();
+
+        List<Item> results = extractor.extract(
+                        PDFInputFile.loadTestCase(getClass(), "INGDiBa_Dividendengutschrift9.txt"),
+                        errors);
+
+        assertThat(errors, empty());
+        assertThat(results.size(), is(2));
+
+        Security security = results.stream().filter(i -> i instanceof SecurityItem).findFirst().get().getSecurity();
+        assertThat(security.getIsin(), is("CA29250N6679"));
+        assertThat(security.getWkn(), is("A2DPXK"));
+        assertThat(security.getName(), is("4,40000% Enbridge Inc. 4,4%.Cum.Red.Pref.Shs.5 CD 25"));
+
+        AccountTransaction t = (AccountTransaction) results.stream().filter(i -> i instanceof TransactionItem)
+                        .findFirst().get().getSubject();
+
+        assertThat(t.getType(), is(AccountTransaction.Type.DIVIDENDS));
+
+        assertThat(t.getAmount(), is(Values.Amount.factorize(29.60)));
+        assertThat(t.getDateTime(), is(LocalDateTime.parse("2021-03-01T00:00")));
+        assertThat(t.getShares(), is(Values.Share.factorize(165)));
+
+        assertThat(t.getGrossValue(), is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(45.94))));
+        assertThat(t.getUnitSum(Unit.Type.TAX), is(Money.of(CurrencyUnit.EUR,
+                        Values.Amount.factorize(11.49 + 4.60 + 0.25))));
+    }
+
+    @Test
+    public void testDividendengutschrift10() throws IOException
+    {
+        INGDiBaExtractor extractor = new INGDiBaExtractor(new Client());
+
+        List<Exception> errors = new ArrayList<>();
+
+        List<Item> results = extractor.extract(
+                        PDFInputFile.loadTestCase(getClass(), "INGDiBa_Dividendengutschrift10.txt"),
+                        errors);
+
+        assertThat(errors, empty());
+        assertThat(results.size(), is(2));
+
+        Security security = results.stream().filter(i -> i instanceof SecurityItem).findFirst().get().getSecurity();
+        assertThat(security.getIsin(), is("US92826C8394"));
+        assertThat(security.getWkn(), is("A0NC7B"));
+        assertThat(security.getName(), is("VISA Inc. Reg. Shares Class A DL -,0001"));
+
+        AccountTransaction t = (AccountTransaction) results.stream().filter(i -> i instanceof TransactionItem)
+                        .findFirst().get().getSubject();
+
+        assertThat(t.getType(), is(AccountTransaction.Type.DIVIDENDS));
+
+        assertThat(t.getAmount(), is(Values.Amount.factorize(2.68)));
+        assertThat(t.getDateTime(), is(LocalDateTime.parse("2021-03-01T00:00")));
+        assertThat(t.getShares(), is(Values.Share.factorize(11.97545)));
+
+        assertThat(t.getGrossValue(), is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(3.15))));
+        assertThat(t.getUnitSum(Unit.Type.TAX), is(Money.of(CurrencyUnit.EUR,
+                        Values.Amount.factorize(0.47))));
+    }
+
     @Test
     public void testGemeinschaftskontoDividendengutschrift1() throws IOException
     {
@@ -695,7 +936,7 @@ public class INGDiBaPDFExtractorTest
         assertThat(t.getUnitSum(Unit.Type.TAX), is(Money.of(CurrencyUnit.EUR,
                         Values.Amount.factorize(79.46 + 7.15 + 4.37 + 79.46 + 7.15 + 4.37))));
     }
-    
+
     @Test
     public void testNVDividendengutschrift1() throws IOException
     {
@@ -703,9 +944,8 @@ public class INGDiBaPDFExtractorTest
 
         List<Exception> errors = new ArrayList<>();
 
-        List<Item> results = extractor.extract(
-                        PDFInputFile.loadTestCase(getClass(), "INGDiBa_NV_Dividendengutschrift.txt"),
-                        errors);
+        List<Item> results = extractor
+                        .extract(PDFInputFile.loadTestCase(getClass(), "INGDiBa_NV_Dividendengutschrift.txt"), errors);
 
         assertThat(errors, empty());
         assertThat(results.size(), is(2));
@@ -725,7 +965,70 @@ public class INGDiBaPDFExtractorTest
         assertThat(t.getShares(), is(Values.Share.factorize(700)));
 
         assertThat(t.getGrossValue(), is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(61.85))));
-        assertThat(t.getUnitSum(Unit.Type.TAX), is(Money.of(CurrencyUnit.EUR,
-                        Values.Amount.factorize(0.0))));
+        assertThat(t.getUnitSum(Unit.Type.TAX), is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(0.0))));
+    }
+
+    @Test
+    public void testVorabpauschale01()
+    {
+        INGDiBaExtractor extractor = new INGDiBaExtractor(new Client());
+
+        List<Exception> errors = new ArrayList<>();
+
+        List<Item> results = extractor.extract(PDFInputFile.loadTestCase(getClass(), "INGDiBa_Vorabpauschale01.txt"),
+                        errors);
+
+        assertThat(errors, empty());
+        assertThat(results.size(), is(2));
+        new AssertImportActions().check(results, CurrencyUnit.EUR);
+
+        // check security
+        Security security = results.stream().filter(i -> i instanceof SecurityItem).findAny().get().getSecurity();
+        assertThat(security.getName(), is("iShsIII-Gl.Infl.L.Gov.Bd U.ETF Reg. Shs HGD EUR Acc. oN"));
+        assertThat(security.getIsin(), is("IE00BKPT2S34"));
+        assertThat(security.getWkn(), is("A2P1KU"));
+        assertThat(security.getCurrencyCode(), is(CurrencyUnit.EUR));
+
+        // check transaction
+        AccountTransaction transaction = (AccountTransaction) results.stream().filter(i -> i instanceof TransactionItem).findFirst()
+                        .orElseThrow(IllegalArgumentException::new).getSubject();
+
+        assertThat(transaction.getType(), is(AccountTransaction.Type.TAXES));
+        assertThat(transaction.getDateTime(), is(LocalDateTime.parse("2021-01-04T00:00")));
+        assertThat(transaction.getShares(), is(Values.Share.factorize(378)));
+        assertThat(transaction.getMonetaryAmount(),
+                        is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(0.16))));
+    }
+
+    @Test
+    public void testVorabpauschale02()
+    {
+        INGDiBaExtractor extractor = new INGDiBaExtractor(new Client());
+
+        List<Exception> errors = new ArrayList<>();
+
+        List<Item> results = extractor.extract(PDFInputFile.loadTestCase(getClass(), "INGDiBa_Vorabpauschale02.txt"),
+                        errors);
+
+        assertThat(errors, empty());
+        assertThat(results.size(), is(2));
+        new AssertImportActions().check(results, CurrencyUnit.EUR);
+
+        // check security
+        Security security = results.stream().filter(i -> i instanceof SecurityItem).findAny().get().getSecurity();
+        assertThat(security.getName(), is("Xtrackers MSCI World Swap Inhaber-Anteile 1C o.N."));
+        assertThat(security.getIsin(), is("LU0274208692"));
+        assertThat(security.getWkn(), is("DBX1MW"));
+        assertThat(security.getCurrencyCode(), is(CurrencyUnit.EUR));
+
+        // check transaction
+        AccountTransaction transaction = (AccountTransaction) results.stream().filter(i -> i instanceof TransactionItem).findFirst()
+                        .orElseThrow(IllegalArgumentException::new).getSubject();
+
+        assertThat(transaction.getType(), is(AccountTransaction.Type.TAXES));
+        assertThat(transaction.getDateTime(), is(LocalDateTime.parse("2021-01-04T00:00")));
+        assertThat(transaction.getShares(), is(Values.Share.factorize(61.76876)));
+        assertThat(transaction.getMonetaryAmount(),
+                        is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(0.32))));
     }
 }

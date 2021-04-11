@@ -484,9 +484,8 @@ public class OnvistaPDFExtractorTest
         assertThat(taxes, is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(8.34 / 7.483))));
 
         Unit grossValue = transaction.getUnit(Unit.Type.GROSS_VALUE).orElseThrow(IllegalArgumentException::new);
-        assertThat(grossValue.getAmount(),
-                        is(Money.of(CurrencyUnit.EUR, transaction.getAmount() + taxes.getAmount())));
-        assertThat(grossValue.getForex(), is(Money.of("DKK", Values.Amount.factorize(3.02 * 7.483 + 8.34))));
+        assertThat(grossValue.getAmount(), is(Money.of(CurrencyUnit.EUR, transaction.getAmount() + taxes.getAmount())));
+        assertThat(grossValue.getForex(), is(Money.of("DKK", Values.Amount.factorize(6 * 5.15))));
     }
 
     @Test
@@ -762,7 +761,7 @@ public class OnvistaPDFExtractorTest
         assertThat(transaction.getMonetaryAmount(), is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(23.53))));
         assertThat(transaction.getShares(), is(Values.Share.factorize(500)));
         assertThat(transaction.getUnitSum(Unit.Type.TAX),
-                        is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(3.16 + 0.18 + 4.74))));
+                        is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(31.62 - 23.53))));
     }
 
     @Test
@@ -916,6 +915,42 @@ public class OnvistaPDFExtractorTest
         assertThat(entry.getPortfolioTransaction().getShares(), is(Values.Share.factorize(35)));
         assertThat(entry.getPortfolioTransaction().getUnitSum(Unit.Type.FEE),
                         is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize((11.03 + 5.51) / 1.1026))));
+    }
+
+    @Test
+    public void testWertpapierKaufAktien4()
+    {
+        OnvistaPDFExtractor extractor = new OnvistaPDFExtractor(new Client());
+
+        List<Exception> errors = new ArrayList<>();
+
+        List<Item> results = extractor.extract(PDFInputFile.loadTestCase(getClass(), "OnvistaKaufAktien4.txt"), errors);
+
+        assertThat(errors, empty());
+        assertThat(results.size(), is(2));
+
+        Security security = results.stream().filter(i -> i instanceof SecurityItem).map(Item::getSecurity).findAny()
+                        .orElseThrow(IllegalArgumentException::new);
+
+        assertThat(security.getName(), is("Société Générale Effekten GmbH DISC.Z 13.05.2021"));
+        assertThat(security.getIsin(), is("DE000SE8F9E8"));
+
+        // check buy sell transaction
+        Optional<Item> item = results.stream().filter(i -> i instanceof BuySellEntryItem).findFirst();
+        BuySellEntry entry = (BuySellEntry) item.orElseThrow(IllegalArgumentException::new).getSubject();
+
+        assertThat(entry.getPortfolioTransaction().getType(), is(PortfolioTransaction.Type.BUY));
+        assertThat(entry.getAccountTransaction().getType(), is(AccountTransaction.Type.BUY));
+
+        assertThat(entry.getPortfolioTransaction().getCurrencyCode(), is(CurrencyUnit.EUR));
+        assertThat(entry.getPortfolioTransaction().getMonetaryAmount(),
+                        is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(1924.52))));
+        assertThat(entry.getPortfolioTransaction().getDateTime(), is(LocalDateTime.parse("2021-03-03T15:32")));
+        assertThat(entry.getPortfolioTransaction().getShares(), is(Values.Share.factorize(4)));
+        assertThat(entry.getPortfolioTransaction().getUnitSum(Unit.Type.FEE),
+                        is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(2.00))));
+        assertThat(entry.getPortfolioTransaction().getUnitSum(Unit.Type.TAX),
+                        is(Money.of(CurrencyUnit.EUR, Values.Amount.factorize(0.00))));
     }
 
     @Test

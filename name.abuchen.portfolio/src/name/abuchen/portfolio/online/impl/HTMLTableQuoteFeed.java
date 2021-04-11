@@ -181,6 +181,9 @@ public class HTMLTableQuoteFeed implements QuoteFeed
                             new DateTimeFormatterBuilder().appendPattern("d.M.")
                                             .appendValueReduced(ChronoField.YEAR, 2, 2, Year.now().getValue() - 80)
                                             .toFormatter(),
+                            new DateTimeFormatterBuilder().appendPattern("M/d/")
+                                            .appendValueReduced(ChronoField.YEAR, 2, 2, Year.now().getValue() - 80)
+                                            .toFormatter(),
                             DateTimeFormatter.ofPattern("d.M.y"), //$NON-NLS-1$
                             DateTimeFormatter.ofPattern("d. MMM y"), //$NON-NLS-1$
                             DateTimeFormatter.ofPattern("d. MMMM y"), //$NON-NLS-1$

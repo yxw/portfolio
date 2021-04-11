@@ -184,6 +184,7 @@ public class Messages extends NLS
     public static String ColumnFix;
     public static String ColumnForeignCurrencies;
     public static String ColumnGrossDividend;
+    public static String ColumnGrossProfitLoss;
     public static String ColumnGrossValue;
     public static String ColumnHeight;
     public static String ColumnHoldingPeriod;
@@ -464,6 +465,7 @@ public class Messages extends NLS
     public static String LabelAccumulatedTaxes;
     public static String LabelAggregation;
     public static String LabelAggregationDaily;
+    public static String LabelAllCurrencies;
     public static String LabelAllFiles;
     public static String LabelAllSecurities;
     public static String LabelAllTrades;
@@ -522,6 +524,7 @@ public class Messages extends NLS
     public static String LabelClientFilterNew;
     public static String LabelClientFilterNoCustomFilterExisting;
     public static String LabelClose;
+    public static String FilterOnlyClosedTrades;
     public static String LabelColorSchema;
     public static String LabelColumns;
     public static String LabelCommon;
@@ -548,6 +551,10 @@ public class Messages extends NLS
     public static String LabelEarningsPerYear;
     public static String LabelEarningsSelectStartYear;
     public static String LabelEarningsExpenses;
+    public static String LabelEarningsUseConsolidateRetired;
+    public static String LabelEarningsConsolidateRetired;
+    public static String LabelEarningsUseTradeProfitLoss;
+    public static String LabelEarningsTradeProfitLoss;
     public static String LabelExpenses;
     public static String LabelError;
     public static String LabelEurostatRegion;
@@ -594,6 +601,7 @@ public class Messages extends NLS
     public static String LabelNumberDataSeries;
     public static String LabelOneOfX;
     public static String LabelOpenTrade;
+    public static String FilterOnlyOpenTrades;
     public static String LabelOrderByTaxonomy;
     public static String LabelPassword;
     public static String LabelPasswordRepeat;
@@ -662,6 +670,11 @@ public class Messages extends NLS
     public static String LabelJSONPathHint;
     public static String LabelJSONPathToClose;
     public static String LabelJSONPathToDate;
+    public static String LabelJSONDateFormat;
+    public static String LabelJSONDateFormatHint;
+    public static String LabelJSONPathToLow;
+    public static String LabelJSONPathToHigh;
+    public static String LabelJSONPathToVolume;
     public static String LabelKeyIndicators;
     public static String LabelMaxDrawdown;
     public static String LabelMaxDrawdownDuration;
@@ -690,6 +703,8 @@ public class Messages extends NLS
     public static String LabelTrades;
     public static String LabelTradesBasicStatistics;
     public static String LabelTradesProfitLoss;
+    public static String FilterOnlyLossMakingTrades;
+    public static String FilterOnlyProfitableTrades;
     public static String LabelTradesTurnoverRate;
     public static String LabelTradingActivityChart;
     public static String LabelTransactions;
@@ -817,6 +832,7 @@ public class Messages extends NLS
     public static String MsgDeletionNotPossible;
     public static String MsgDeletionNotPossibleDetail;
     public static String MsgDialogInputRequired;
+    public static String MsgDialogNotAValidCurrency;
     public static String MsgDialogNotAValidISIN;
     public static String MsgEmbeddedBrowserError;
     public static String MsgErrorConvertedAmount;
@@ -836,6 +852,8 @@ public class Messages extends NLS
     public static String MsgIncorrectTotal;
     public static String MsgInfoChangingCurrencyNotPossible;
     public static String MsgInfoRetiredSecurities;
+    public static String MsgInvalidImage;
+    public static String MsgInvalidImageDetail;
     public static String MsgJavaVersionTooOldForLetsEncrypt;
     public static String MsgLoadingFile;
     public static String MsgMissingAccount;
@@ -1050,6 +1068,7 @@ public class Messages extends NLS
     public static String WatchlistRename;
     public static String BookmarkMenu_EditBookmarks;
     public static String FilterNotRetired;
+    public static String MenuFilterTrades;
     public static String FilterValuationNonZero;
     public static String ForceClearPersistedStateDialogTitle;
     public static String ForceClearPersistedStateMessage;
@@ -1061,6 +1080,9 @@ public class Messages extends NLS
     public static String HoldingsWarningAssetsWithNegativeValuation;
     public static String HoldingsWarningAssetsWithNegativeValuationDetails;
     public static String YearlyPerformanceHeatmapToolTip;
+    public static String SecurityMenuSetSecurityInactive;
+    public static String SecurityMenuSetMultipleSecurityInactiveConfirm;
+    public static String SecurityMenuSetSingleSecurityInactiveConfirm;
     static
     {
         // initialize resource bundle

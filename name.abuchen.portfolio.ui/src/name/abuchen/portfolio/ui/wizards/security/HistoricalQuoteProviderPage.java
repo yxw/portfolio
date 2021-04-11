@@ -28,6 +28,7 @@ import name.abuchen.portfolio.online.Factory;
 import name.abuchen.portfolio.online.QuoteFeed;
 import name.abuchen.portfolio.online.QuoteFeedData;
 import name.abuchen.portfolio.online.impl.AlphavantageQuoteFeed;
+import name.abuchen.portfolio.online.impl.BinanceQuoteFeed;
 import name.abuchen.portfolio.online.impl.FinnhubQuoteFeed;
 import name.abuchen.portfolio.online.impl.GenericJSONQuoteFeed;
 import name.abuchen.portfolio.online.impl.PortfolioReportQuoteFeed;
@@ -107,6 +108,30 @@ public class HistoricalQuoteProviderPage extends AbstractQuoteProviderPage
     }
 
     @Override
+    protected String getJSONDateFormatPropertyName()
+    {
+        return GenericJSONQuoteFeed.DATE_FORMAT_PROPERTY_NAME_HISTORIC;
+    }
+
+    @Override
+    protected String getJSONLowPathPropertyName()
+    {
+        return GenericJSONQuoteFeed.LOW_PROPERTY_NAME_HISTORIC;
+    }
+
+    @Override
+    protected String getJSONHighPathPropertyName()
+    {
+        return GenericJSONQuoteFeed.HIGH_PROPERTY_NAME_HISTORIC;
+    }
+
+    @Override
+    protected String getJSONVolumePathPropertyName()
+    {
+        return GenericJSONQuoteFeed.VOLUME_PROPERTY_NAME_HISTORIC;
+    }
+
+    @Override
     protected void setStatus(String status)
     {
         getModel().setStatusHistoricalQuotesProvider(status);
@@ -179,6 +204,8 @@ public class HistoricalQuoteProviderPage extends AbstractQuoteProviderPage
             return AlphavantageQuoteFeed.ID + getModel().getTickerSymbol();
         else if (FinnhubQuoteFeed.ID.equals(getFeed()))
             return FinnhubQuoteFeed.ID + getModel().getTickerSymbol();
+        else if (BinanceQuoteFeed.ID.equals(getFeed()))
+            return BinanceQuoteFeed.ID + getModel().getTickerSymbol();
         else if (QuandlQuoteFeed.ID.equals(getFeed()))
             return QuandlQuoteFeed.ID
                             + String.valueOf(getModel().getFeedProperty(QuandlQuoteFeed.QUANDL_CODE_PROPERTY_NAME))
@@ -189,7 +216,15 @@ public class HistoricalQuoteProviderPage extends AbstractQuoteProviderPage
                             + String.valueOf(getModel()
                                             .getFeedProperty(GenericJSONQuoteFeed.DATE_PROPERTY_NAME_HISTORIC))
                             + String.valueOf(getModel()
-                                            .getFeedProperty(GenericJSONQuoteFeed.CLOSE_PROPERTY_NAME_HISTORIC));
+                                            .getFeedProperty(GenericJSONQuoteFeed.CLOSE_PROPERTY_NAME_HISTORIC))
+                            + String.valueOf(getModel()
+                                            .getFeedProperty(GenericJSONQuoteFeed.DATE_FORMAT_PROPERTY_NAME_HISTORIC))
+                            + String.valueOf(getModel()
+                                            .getFeedProperty(GenericJSONQuoteFeed.LOW_PROPERTY_NAME_HISTORIC))
+                            + String.valueOf(getModel()
+                                            .getFeedProperty(GenericJSONQuoteFeed.HIGH_PROPERTY_NAME_HISTORIC))
+                            + String.valueOf(getModel()
+                                            .getFeedProperty(GenericJSONQuoteFeed.VOLUME_PROPERTY_NAME_HISTORIC));
         else
             return getFeed() + getModel().getFeedURL();
     }
