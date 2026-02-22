@@ -916,13 +916,6 @@ public class OnvistaPDFExtractor extends AbstractPDFExtractor
                             if (ctx.getString(FAILURE) != null)
                                 item.setFailureMessage(ctx.getString(FAILURE));
 
-                            // ex-date is only supported for dividend
-                            // transactions. if there is a
-                            // 'Ertragsthesaurierung', then we have a tax
-                            // transaction without ex-date.
-                            if (t.getType() != AccountTransaction.Type.DIVIDENDS && t.getExDate() != null)
-                                t.setExDate(null);
-
                             return item;
                         });
 

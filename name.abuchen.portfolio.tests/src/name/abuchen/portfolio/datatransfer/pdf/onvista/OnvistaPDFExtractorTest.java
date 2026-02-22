@@ -38,7 +38,6 @@ import static name.abuchen.portfolio.datatransfer.ExtractorTestUtilities.countSk
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.junit.Assert.assertNull;
 
@@ -3105,7 +3104,7 @@ public class OnvistaPDFExtractorTest
         assertThat(transaction.getType(), is(AccountTransaction.Type.TAXES));
 
         assertThat(transaction.getDateTime(), is(LocalDateTime.parse("2017-10-20T00:00")));
-        assertThat(transaction.getExDate(), is(nullValue()));
+        assertThat(transaction.getExDate(), is(LocalDateTime.parse("2017-10-06T00:00")));
         assertThat(transaction.getShares(), is(Values.Share.factorize(0.4512)));
         assertThat(transaction.getSource(), is("Dividende15.txt"));
         assertThat(transaction.getNote(), is("Abrechnungs-Nr. 12345678 | Ertrag für 2017"));
